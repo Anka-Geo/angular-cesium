@@ -1,27 +1,72 @@
-# AngularCesium
+# Bu Repo Nedir
+- Bu repo `Angular'a CesiumJS nasıl yüklenir?` sorusuna cevap vermesi için yapılmıştır. Cesium için ara kütüphane kullanılmamaktadır.
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 12.0.4.
+## Ayarlamalar Nasıl Yapılır 
+- `yarn add cesium` komutu ile cesium'u yüklüyoruz.
+- `yarn add -D @types/cesium` komutu ile cesium'un types'ını yüklemiş oluyoruz.
+- `angular.json` dosyasına ekleme yapacağız.
+    - `projects > angular-cesium > architect > build > options > assets` içine aşağıdaki yapıyı ekliyoruz.
+        - ```json
+            {
+                "glob": "**/*",
+                "input": "node_modules/cesium/Build/Cesium",
+                "output": "./assets/cesium"
+            }
+            ```
+    - `projects > angular-cesium > architect > build > options > styles` içine aşağıdaki string'i ekliyoruz.
+        - `"node_modules/cesium/Build/Cesium/Widgets/widgets.css"`
+    - `projects > angular-cesium > architect > build > options > scripts` içine aşağıdaki string'i ekliyoruz.
+        - `"./node_modules/cesium/Build/Cesium/Cesium.js"`
+- `src/main.ts` içine aşağıdaki kod bloğunu ekliyoruz.
+    - ```ts
+        (window as any)['CESIUM_BASE_URL'] = '/assets/cesium/';
+        ```
+- Şu halde Cesium yüklenmiş durumdadır. Lakin ki intellisense çalışmıyor.
+- `src/global.d.ts` dosyası oluştur, içeriği bu şekilde olsun.
+    - ```ts
+        declare type Cesium = import('@types/cesium');
+        // yada bu
+        declare type Cesium = import('cesium');
 
-## Development server
+        ```
+- `tsconfig.json -> compilerOptions` içerisine yeni bir parametre ekleyeceğiz.
+    - ```json
+        {
+            "compileOnSave": false,
+            "compilerOptions": {
+                ...
+                "skipLibCheck": true, // eklenecek değer bu
+                ...
+            },
+            ...
+        }
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The app will automatically reload if you change any of the source files.
+        ```
+- `src/app.component.html` için aşağıdaki kodu uygulayınız. 
+    - ```HTML
+        <div id="map"></div>
+        ```
+- `src/app.component.ts` için aşağıdaki kodu uygulayınız.
+    - ```ts
+        import { Component, OnInit } from '@angular/core';
 
-## Code scaffolding
+        @Component({
+            selector: 'app-root',
+            templateUrl: './app.component.html',
+            styleUrls: ['./app.component.scss']
+        })
+        export class AppComponent implements OnInit {
+            foo?: Cesium.Viewer;
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+            ngOnInit() {
+                this.foo = new Cesium.Viewer('map');
+            }
+        }
+        ```
 
-## Build
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory.
 
-## Running unit tests
 
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
-
-## Running end-to-end tests
-
-Run `ng e2e` to execute the end-to-end tests via a platform of your choice. To use this command, you need to first add a package that implements end-to-end testing capabilities.
-
-## Further help
-
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.io/cli) page.
+### NOT
+- Intellisense ayarlaması için `@types/cesium` kütüphanesi kullanılmaktadır. Bu kütüphane versiyon olarak cesium'un gerisinden geliyor. Şuanda `cesium`'un son version'u 1.82.1 ama `@types/cesium`'un son versionu 1.67.13. Bu kod yazarken bazı sıkıntılara sebep veriyor ve Typescript seviyesinde casting yapmayı zorunlu kılıyor.
+- Versiyon hatasını düzeltmek için `node_modules/cesium/Build/Cesium/Cesium.d.ts` dosyası da denenebilir. Ama bunu henüz yapamadık.
